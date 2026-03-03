@@ -4,6 +4,7 @@ import { Box, Button, Chip, IconButton, MenuItem, Stack, TextField, Typography }
 import DeleteIcon from '@mui/icons-material/DeleteOutline';
 import DoneIcon from '@mui/icons-material/DoneAll';
 import AutorenewIcon from '@mui/icons-material/Autorenew';
+import EditIcon from '@mui/icons-material/EditOutlined';
 import { useForm } from 'react-hook-form';
 import { DataTable } from '@/shared/components/DataTable';
 import { FormModal } from '@/shared/components/FormModal';
@@ -31,6 +32,11 @@ interface TicketForm {
   priority: TicketPriority;
   dueDate: string;
   notes: string;
+}
+
+interface TicketStatusOption {
+  label: string;
+  value: 'Semua' | TicketStatus;
 }
 
 const defaultValues: TicketForm = {
@@ -68,9 +74,30 @@ export const PhaseTwoWorkspace = ({
   const [rows, setRows] = useState<TicketItem[]>(() => loadItems(storageKey));
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'Semua' | TicketStatus>('Semua');
+  const [priorityFilter, setPriorityFilter] = useState<'Semua' | TicketPriority>('Semua');
   const [open, setOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [toast, setToast] = useState('');
   const { register, handleSubmit, reset } = useForm<TicketForm>({ defaultValues });
+
+  const statusOptions: TicketStatusOption[] = [
+    { label: 'Semua', value: 'Semua' },
+    { label: 'Baru', value: 'Baru' },
+    { label: 'Diproses', value: 'Diproses' },
+    { label: 'Selesai', value: 'Selesai' },
+  ];
+
+  const closeModal = () => {
+    setOpen(false);
+    setEditingId(null);
+    reset(defaultValues);
+  };
+
+  const openCreateModal = () => {
+    setEditingId(null);
+    reset({ ...defaultValues, category: categories[0] ?? '' });
+    setOpen(true);
+  };
 
   const saveRows = (nextRows: TicketItem[]) => {
     setRows(nextRows);
@@ -78,6 +105,13 @@ export const PhaseTwoWorkspace = ({
   };
 
   const createTicket = (form: TicketForm) => {
+    if (editingId) {
+      saveRows(rows.map((item) => (item.id === editingId ? { ...item, ...form } : item)));
+      setToast('Data berhasil diperbarui.');
+      closeModal();
+      return;
+    }
+
     const next: TicketItem = {
       id: crypto.randomUUID(),
       status: 'Baru',
@@ -86,9 +120,21 @@ export const PhaseTwoWorkspace = ({
     };
 
     saveRows([next, ...rows]);
-    setOpen(false);
-    reset(defaultValues);
+    closeModal();
     setToast('Data berhasil ditambahkan.');
+  };
+
+  const editTicket = (item: TicketItem) => {
+    setEditingId(item.id);
+    reset({
+      title: item.title,
+      requester: item.requester,
+      category: item.category,
+      priority: item.priority,
+      dueDate: item.dueDate,
+      notes: item.notes,
+    });
+    setOpen(true);
   };
 
   const updateStatus = (id: string, status: TicketStatus) => {
@@ -106,10 +152,11 @@ export const PhaseTwoWorkspace = ({
     () =>
       rows.filter((item) => {
         const matchStatus = statusFilter === 'Semua' || item.status === statusFilter;
+        const matchPriority = priorityFilter === 'Semua' || item.priority === priorityFilter;
         const keyword = `${item.title} ${item.requester} ${item.category}`.toLowerCase();
-        return matchStatus && keyword.includes(search.toLowerCase());
+        return matchStatus && matchPriority && keyword.includes(search.toLowerCase());
       }),
-    [rows, search, statusFilter],
+    [rows, search, statusFilter, priorityFilter],
   );
 
   const summary = {
@@ -123,7 +170,7 @@ export const PhaseTwoWorkspace = ({
     <Box>
       <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
         <Typography variant="h5">{title}</Typography>
-        <Button variant="contained" onClick={() => setOpen(true)}>{createLabel}</Button>
+        <Button variant="contained" onClick={openCreateModal}>{createLabel}</Button>
       </Stack>
 
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={1} mb={2}>
@@ -148,7 +195,18 @@ export const PhaseTwoWorkspace = ({
           onChange={(event) => setStatusFilter(event.target.value as 'Semua' | TicketStatus)}
           sx={{ width: { xs: '100%', md: 180 } }}
         >
-          {['Semua', 'Baru', 'Diproses', 'Selesai'].map((option) => (
+          {statusOptions.map((option) => (
+            <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
+          ))}
+        </TextField>
+        <TextField
+          size="small"
+          select
+          value={priorityFilter}
+          onChange={(event) => setPriorityFilter(event.target.value as 'Semua' | TicketPriority)}
+          sx={{ width: { xs: '100%', md: 180 } }}
+        >
+          {['Semua', 'Rendah', 'Sedang', 'Tinggi'].map((option) => (
             <MenuItem key={option} value={option}>{option}</MenuItem>
           ))}
         </TextField>
@@ -161,13 +219,24 @@ export const PhaseTwoWorkspace = ({
           { key: 'requester', header: 'Pemohon/Pelapor' },
           { key: 'category', header: 'Kategori' },
           { key: 'priority', header: 'Prioritas', render: (item) => <Chip size="small" label={item.priority} /> },
-          { key: 'dueDate', header: 'Target' },
+          {
+            key: 'dueDate',
+            header: 'Target',
+            render: (item) => {
+              const overdue = dayjs(item.dueDate).isBefore(dayjs(), 'day') && item.status !== 'Selesai';
+              return <Chip size="small" color={overdue ? 'error' : 'default'} label={item.dueDate} />;
+            },
+          },
           { key: 'status', header: 'Status', render: (item) => <Chip size="small" color={item.status === 'Selesai' ? 'success' : item.status === 'Diproses' ? 'warning' : 'info'} label={item.status} /> },
+          { key: 'notes', header: 'Catatan', render: (item) => item.notes || '-' },
           {
             key: 'actions',
             header: 'Aksi',
             render: (item) => (
               <Stack direction="row" spacing={0.5}>
+                <IconButton size="small" onClick={() => editTicket(item)} title="Ubah data">
+                  <EditIcon fontSize="small" />
+                </IconButton>
                 <IconButton size="small" onClick={() => updateStatus(item.id, item.status)} title="Ubah status">
                   {item.status === 'Selesai' ? <DoneIcon fontSize="small" /> : <AutorenewIcon fontSize="small" />}
                 </IconButton>
@@ -180,7 +249,7 @@ export const PhaseTwoWorkspace = ({
         ]}
       />
 
-      <FormModal open={open} title={createLabel} onClose={() => setOpen(false)}>
+      <FormModal open={open} title={editingId ? `Ubah Data - ${title}` : createLabel} onClose={closeModal}>
         <Stack component="form" spacing={2} mt={1} onSubmit={handleSubmit(createTicket)}>
           <TextField label="Judul" required {...register('title')} />
           <TextField label="Pemohon/Pelapor" required {...register('requester')} />
@@ -198,7 +267,7 @@ export const PhaseTwoWorkspace = ({
             <TextField label="Target Selesai" type="date" InputLabelProps={{ shrink: true }} {...register('dueDate')} />
           </Stack>
           <TextField label="Catatan" multiline minRows={3} {...register('notes')} />
-          <Button type="submit" variant="contained">Simpan</Button>
+          <Button type="submit" variant="contained">{editingId ? 'Perbarui' : 'Simpan'}</Button>
         </Stack>
       </FormModal>
 
