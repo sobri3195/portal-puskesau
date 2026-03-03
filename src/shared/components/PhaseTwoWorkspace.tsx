@@ -1,10 +1,13 @@
 import { useMemo, useState } from 'react';
 import dayjs from 'dayjs';
-import { Box, Button, Chip, IconButton, MenuItem, Stack, TextField, Typography } from '@mui/material';
+import { Alert, Box, Button, Card, CardContent, Chip, IconButton, LinearProgress, MenuItem, Stack, TextField, Typography } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/DeleteOutline';
 import DoneIcon from '@mui/icons-material/DoneAll';
 import AutorenewIcon from '@mui/icons-material/Autorenew';
 import EditIcon from '@mui/icons-material/EditOutlined';
+import AssignmentTurnedInIcon from '@mui/icons-material/AssignmentTurnedIn';
+import PlaylistAddCheckCircleIcon from '@mui/icons-material/PlaylistAddCheckCircle';
+import PriorityHighIcon from '@mui/icons-material/PriorityHigh';
 import { useForm } from 'react-hook-form';
 import { DataTable } from '@/shared/components/DataTable';
 import { FormModal } from '@/shared/components/FormModal';
@@ -150,12 +153,14 @@ export const PhaseTwoWorkspace = ({
 
   const filtered = useMemo(
     () =>
-      rows.filter((item) => {
-        const matchStatus = statusFilter === 'Semua' || item.status === statusFilter;
-        const matchPriority = priorityFilter === 'Semua' || item.priority === priorityFilter;
-        const keyword = `${item.title} ${item.requester} ${item.category}`.toLowerCase();
-        return matchStatus && matchPriority && keyword.includes(search.toLowerCase());
-      }),
+      rows
+        .filter((item) => {
+          const matchStatus = statusFilter === 'Semua' || item.status === statusFilter;
+          const matchPriority = priorityFilter === 'Semua' || item.priority === priorityFilter;
+          const keyword = `${item.title} ${item.requester} ${item.category}`.toLowerCase();
+          return matchStatus && matchPriority && keyword.includes(search.toLowerCase());
+        })
+        .sort((a, b) => dayjs(a.dueDate).valueOf() - dayjs(b.dueDate).valueOf()),
     [rows, search, statusFilter, priorityFilter],
   );
 
@@ -164,18 +169,34 @@ export const PhaseTwoWorkspace = ({
     baru: rows.filter((r) => r.status === 'Baru').length,
     diproses: rows.filter((r) => r.status === 'Diproses').length,
     selesai: rows.filter((r) => r.status === 'Selesai').length,
+    overdue: rows.filter((r) => dayjs(r.dueDate).isBefore(dayjs(), 'day') && r.status !== 'Selesai').length,
   };
+
+  const completion = summary.total === 0 ? 0 : Math.round((summary.selesai / summary.total) * 100);
 
   return (
     <Box>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
-        <Typography variant="h5">{title}</Typography>
+      <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems={{ xs: 'start', md: 'center' }} mb={2} gap={2}>
+        <Box>
+          <Typography variant="h5">{title}</Typography>
+          <Typography color="text.secondary" variant="body2">Kelola permintaan, pantau SLA, dan tindak lanjuti progres dalam satu workspace.</Typography>
+        </Box>
         <Button variant="contained" onClick={openCreateModal}>{createLabel}</Button>
       </Stack>
 
+      <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5} mb={2}>
+        <Card sx={{ minWidth: 160 }}><CardContent><Stack direction="row" alignItems="center" spacing={1}><AssignmentTurnedInIcon color="primary" /><Typography>Total</Typography></Stack><Typography variant="h5">{summary.total}</Typography></CardContent></Card>
+        <Card sx={{ minWidth: 160 }}><CardContent><Stack direction="row" alignItems="center" spacing={1}><PlaylistAddCheckCircleIcon color="warning" /><Typography>Diproses</Typography></Stack><Typography variant="h5">{summary.diproses}</Typography></CardContent></Card>
+        <Card sx={{ minWidth: 160 }}><CardContent><Stack direction="row" alignItems="center" spacing={1}><PriorityHighIcon color="error" /><Typography>Terlambat</Typography></Stack><Typography variant="h5">{summary.overdue}</Typography></CardContent></Card>
+      </Stack>
+
+      <Box sx={{ mb: 2 }}>
+        <Stack direction="row" justifyContent="space-between" mb={0.5}><Typography variant="body2">Tingkat Penyelesaian</Typography><Typography variant="body2" fontWeight={600}>{completion}%</Typography></Stack>
+        <LinearProgress variant="determinate" value={completion} sx={{ height: 8, borderRadius: 8 }} />
+      </Box>
+
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={1} mb={2}>
-        <Chip color="default" label={`Total: ${summary.total}`} />
-        <Chip color="info" label={`Baru: ${summary.baru}`} />
+        <Chip color="default" label={`Baru: ${summary.baru}`} />
         <Chip color="warning" label={`Diproses: ${summary.diproses}`} />
         <Chip color="success" label={`Selesai: ${summary.selesai}`} />
       </Stack>
@@ -211,6 +232,10 @@ export const PhaseTwoWorkspace = ({
           ))}
         </TextField>
       </Stack>
+
+      {filtered.length === 0 ? (
+        <Alert severity="info" sx={{ mb: 2 }}>Belum ada data yang cocok dengan filter saat ini.</Alert>
+      ) : null}
 
       <DataTable
         rows={filtered}
