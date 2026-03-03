@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/shared/hooks/useAuthStore';
+import type { UserProfile } from '@/shared/types';
 
 const schema = z.object({ email: z.string().email(), password: z.string().min(6) });
 type FormValue = z.infer<typeof schema>;
@@ -26,6 +27,19 @@ export const LoginPage = () => {
     navigate('/app/dashboard');
   };
 
+
+  const loginDemo = () => {
+    const demoUser: UserProfile = {
+      id: 'demo-user',
+      nama: 'Demo Admin',
+      role: 'ADMIN',
+      jabatan: 'Administrator Sistem',
+      unit: 'Puskesau',
+    };
+    setUser(demoUser);
+    navigate('/app/dashboard');
+  };
+
   return (
     <Box sx={{ minHeight: '100vh', display: 'grid', placeItems: 'center' }}>
       <Paper sx={{ p: 4, width: 380 }}>
@@ -35,6 +49,7 @@ export const LoginPage = () => {
           <TextField label="Password" type="password" {...register('password')} error={!!errors.password} helperText={errors.password?.message} />
           {error && <Alert severity="error">{error}</Alert>}
           <Button type="submit" variant="contained" disabled={isSubmitting}>Masuk</Button>
+          <Button type="button" variant="text" onClick={loginDemo}>Masuk mode demo</Button>
         </Stack>
       </Paper>
     </Box>
