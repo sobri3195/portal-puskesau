@@ -13,6 +13,11 @@ import { PlaceholderPage as HelpdeskPage } from '@/features/helpdesk/Placeholder
 import { PlaceholderPage as InventoryPage } from '@/features/inventory/PlaceholderPage';
 import { PlaceholderPage as ServiceReqPage } from '@/features/service-requests/PlaceholderPage';
 import { PlaceholderPage as ElearningPage } from '@/features/elearning/PlaceholderPage';
+import { TelemedicinePage } from '@/features/telemedicine/TelemedicinePage';
+import { HrPage } from '@/features/hr/HrPage';
+import { FinancePage } from '@/features/finance/FinancePage';
+import { PharmacyPage } from '@/features/pharmacy/PharmacyPage';
+import { ReportsPage } from '@/features/reports/ReportsPage';
 
 export const AppRouter = () => (
   <BrowserRouter>
@@ -32,6 +37,11 @@ export const AppRouter = () => (
             <Route path="inventory" element={<InventoryPage title="Inventaris & Logistik" />} />
             <Route path="service-requests" element={<ServiceReqPage title="Permohonan Layanan Kesehatan Internal" />} />
             <Route path="elearning" element={<ElearningPage title="E-learning & Sertifikasi" />} />
+            <Route path="telemedicine" element={<TelemedicinePage />} />
+            <Route path="hr" element={<HrPage />} />
+            <Route path="finance" element={<FinancePage />} />
+            <Route path="pharmacy" element={<PharmacyPage />} />
+            <Route path="reports" element={<ReportsPage />} />
           </Route>
         </Route>
       </Route>
