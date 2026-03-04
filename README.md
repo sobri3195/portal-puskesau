@@ -64,10 +64,14 @@ File `vercel.json` sudah disiapkan untuk rewrite semua route ke `/` agar React R
 - Agenda (CRUD list)
 - Direktori (unit + pejabat)
 
-## Modul Phase 2 (placeholder)
+## Modul Lanjutan
 - Surat masuk/keluar & disposisi
 - Helpdesk
 - Inventaris
 - Permohonan layanan
-- Dashboard KPI lanjutan
 - E-learning
+- Telemedicine
+- Kepegawaian
+- Keuangan
+- Farmasi
+- Laporan kinerja

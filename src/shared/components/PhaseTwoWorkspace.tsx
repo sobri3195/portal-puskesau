@@ -8,6 +8,8 @@ import EditIcon from '@mui/icons-material/EditOutlined';
 import AssignmentTurnedInIcon from '@mui/icons-material/AssignmentTurnedIn';
 import PlaylistAddCheckCircleIcon from '@mui/icons-material/PlaylistAddCheckCircle';
 import PriorityHighIcon from '@mui/icons-material/PriorityHigh';
+import DownloadIcon from '@mui/icons-material/DownloadOutlined';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import { useForm } from 'react-hook-form';
 import { DataTable } from '@/shared/components/DataTable';
 import { FormModal } from '@/shared/components/FormModal';
@@ -68,11 +70,13 @@ export const PhaseTwoWorkspace = ({
   storageKey,
   categories,
   createLabel,
+  moduleHighlights = [],
 }: {
   title: string;
   storageKey: string;
   categories: string[];
   createLabel: string;
+  moduleHighlights?: string[];
 }) => {
   const [rows, setRows] = useState<TicketItem[]>(() => loadItems(storageKey));
   const [search, setSearch] = useState('');
@@ -125,6 +129,37 @@ export const PhaseTwoWorkspace = ({
     saveRows([next, ...rows]);
     closeModal();
     setToast('Data berhasil ditambahkan.');
+  };
+
+  const seedDemoData = () => {
+    const templates = categories.slice(0, 3).map((category, index) => ({
+      id: crypto.randomUUID(),
+      title: `${category} - Tindak Lanjut ${index + 1}`,
+      requester: ['Bagian Umum', 'Klinik Utama', 'Unit SDM'][index] ?? 'Internal',
+      category,
+      status: (['Baru', 'Diproses', 'Selesai'][index] ?? 'Baru') as TicketStatus,
+      priority: (['Tinggi', 'Sedang', 'Rendah'][index] ?? 'Sedang') as TicketPriority,
+      dueDate: dayjs().add(index + 2, 'day').format('YYYY-MM-DD'),
+      notes: 'Data contoh untuk mempercepat kickoff modul.',
+      createdAt: dayjs().subtract(index, 'day').format('YYYY-MM-DD HH:mm'),
+    }));
+    saveRows([...templates, ...rows]);
+    setToast('Template data berhasil ditambahkan.');
+  };
+
+  const exportCsv = () => {
+    const header = ['Judul', 'Pemohon', 'Kategori', 'Status', 'Prioritas', 'Target', 'Catatan'];
+    const body = filtered.map((item) => [item.title, item.requester, item.category, item.status, item.priority, item.dueDate, item.notes]);
+    const csv = [header, ...body]
+      .map((line) => line.map((value) => `"${String(value).split('"').join('""')}"`).join(','))
+      .join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${storageKey}-${dayjs().format('YYYYMMDD-HHmm')}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
   };
 
   const editTicket = (item: TicketItem) => {
@@ -184,6 +219,14 @@ export const PhaseTwoWorkspace = ({
         <Button variant="contained" onClick={openCreateModal}>{createLabel}</Button>
       </Stack>
 
+      {moduleHighlights.length > 0 ? (
+        <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5} mb={2}>
+          {moduleHighlights.map((highlight) => (
+            <Chip key={highlight} icon={<AutoAwesomeIcon />} label={highlight} color="primary" variant="outlined" />
+          ))}
+        </Stack>
+      ) : null}
+
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5} mb={2}>
         <Card sx={{ minWidth: 160 }}><CardContent><Stack direction="row" alignItems="center" spacing={1}><AssignmentTurnedInIcon color="primary" /><Typography>Total</Typography></Stack><Typography variant="h5">{summary.total}</Typography></CardContent></Card>
         <Card sx={{ minWidth: 160 }}><CardContent><Stack direction="row" alignItems="center" spacing={1}><PlaylistAddCheckCircleIcon color="warning" /><Typography>Diproses</Typography></Stack><Typography variant="h5">{summary.diproses}</Typography></CardContent></Card>
@@ -231,6 +274,8 @@ export const PhaseTwoWorkspace = ({
             <MenuItem key={option} value={option}>{option}</MenuItem>
           ))}
         </TextField>
+        <Button variant="outlined" startIcon={<AutoAwesomeIcon />} onClick={seedDemoData}>Isi Template</Button>
+        <Button variant="outlined" startIcon={<DownloadIcon />} onClick={exportCsv}>Export CSV</Button>
       </Stack>
 
       {filtered.length === 0 ? (

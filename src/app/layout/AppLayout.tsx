@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { AppBar, Avatar, Badge, Box, Chip, Divider, Drawer, IconButton, InputAdornment, List, ListItemButton, ListItemIcon, ListItemText, Stack, TextField, Toolbar, Tooltip, Typography } from '@mui/material';
+import { AppBar, Avatar, Badge, Box, Chip, Divider, Drawer, IconButton, InputAdornment, List, ListItemButton, ListItemIcon, ListItemText, Stack, TextField, Toolbar, Tooltip, Typography, useMediaQuery, useTheme } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import DashboardIcon from '@mui/icons-material/DashboardOutlined';
 import DescriptionIcon from '@mui/icons-material/DescriptionOutlined';
@@ -11,6 +11,11 @@ import SupportIcon from '@mui/icons-material/HeadsetMicOutlined';
 import InventoryIcon from '@mui/icons-material/Inventory2Outlined';
 import RequestPageIcon from '@mui/icons-material/AssignmentTurnedInOutlined';
 import SchoolIcon from '@mui/icons-material/SchoolOutlined';
+import LocalHospitalIcon from '@mui/icons-material/LocalHospitalOutlined';
+import PeopleAltIcon from '@mui/icons-material/PeopleAltOutlined';
+import PaymentsIcon from '@mui/icons-material/PaymentsOutlined';
+import MedicationIcon from '@mui/icons-material/MedicationOutlined';
+import AssessmentIcon from '@mui/icons-material/AssessmentOutlined';
 import SearchIcon from '@mui/icons-material/Search';
 import CircleIcon from '@mui/icons-material/Circle';
 import { Link, Outlet, useLocation } from 'react-router-dom';
@@ -29,9 +34,16 @@ const menu = [
   { to: '/app/inventory', label: 'Inventaris', perm: 'phase2:view', icon: <InventoryIcon fontSize="small" /> },
   { to: '/app/service-requests', label: 'Permohonan Layanan', perm: 'phase2:view', icon: <RequestPageIcon fontSize="small" /> },
   { to: '/app/elearning', label: 'E-learning', perm: 'phase2:view', icon: <SchoolIcon fontSize="small" /> },
+  { to: '/app/telemedicine', label: 'Telemedicine', perm: 'phase2:view', icon: <LocalHospitalIcon fontSize="small" /> },
+  { to: '/app/hr', label: 'Kepegawaian', perm: 'phase2:view', icon: <PeopleAltIcon fontSize="small" /> },
+  { to: '/app/finance', label: 'Keuangan', perm: 'phase2:view', icon: <PaymentsIcon fontSize="small" /> },
+  { to: '/app/pharmacy', label: 'Farmasi', perm: 'phase2:view', icon: <MedicationIcon fontSize="small" /> },
+  { to: '/app/reports', label: 'Laporan Kinerja', perm: 'phase2:view', icon: <AssessmentIcon fontSize="small" /> },
 ];
 
 export const AppLayout = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const sidebarOpen = useUiStore((s) => s.sidebarOpen);
   const toggleSidebar = useUiStore((s) => s.toggleSidebar);
   const user = useAuthStore((s) => s.user);
@@ -62,7 +74,12 @@ export const AppLayout = () => {
           </Tooltip>
         </Toolbar>
       </AppBar>
-      <Drawer variant="persistent" open={sidebarOpen} sx={{ width: 300, '& .MuiDrawer-paper': { width: 300, top: 64, borderRight: 0, p: 2, bgcolor: '#0E2442', color: 'white' } }}>
+      <Drawer
+        variant={isMobile ? 'temporary' : 'persistent'}
+        open={sidebarOpen}
+        onClose={toggleSidebar}
+        sx={{ width: 300, '& .MuiDrawer-paper': { width: 300, top: isMobile ? 0 : 64, borderRight: 0, p: 2, bgcolor: '#0E2442', color: 'white' } }}
+      >
         <TextField
           size="small"
           value={search}
@@ -82,7 +99,7 @@ export const AppLayout = () => {
         <Divider sx={{ borderColor: 'rgba(255,255,255,0.12)' }} />
         <List sx={{ mt: 1 }}>
           {filteredMenu.map((item) => (
-            <ListItemButton key={item.to} component={Link} to={item.to} selected={location.pathname === item.to} sx={{ borderRadius: 2, mb: 0.5, '&.Mui-selected': { bgcolor: 'rgba(144,202,249,0.2)' } }}>
+            <ListItemButton key={item.to} component={Link} to={item.to} onClick={isMobile ? toggleSidebar : undefined} selected={location.pathname === item.to} sx={{ borderRadius: 2, mb: 0.5, '&.Mui-selected': { bgcolor: 'rgba(144,202,249,0.2)' } }}>
               <ListItemIcon sx={{ color: 'inherit', minWidth: 36 }}>{item.icon}</ListItemIcon>
               <ListItemText primary={item.label} />
             </ListItemButton>
