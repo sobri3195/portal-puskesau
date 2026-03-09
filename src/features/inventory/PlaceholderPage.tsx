@@ -6,5 +6,10 @@ export const PlaceholderPage = ({ title }: { title: string }) => (
     storageKey="portal-inventory"
     createLabel="Catat Permintaan Inventaris"
     categories={['ATK', 'Perangkat IT', 'Logistik Kesehatan', 'Pemeliharaan']}
+    moduleHighlights={[
+      'Kontrol permintaan lintas gudang dan unit',
+      'Deteksi item kritis menjelang habis',
+      'Jejak tindak lanjut pemeliharaan aset',
+    ]}
   />
 );
