@@ -6,5 +6,10 @@ export const PlaceholderPage = ({ title }: { title: string }) => (
     storageKey="portal-correspondence"
     createLabel="Tambah Surat/Disposisi"
     categories={['Surat Masuk', 'Surat Keluar', 'Disposisi']}
+    moduleHighlights={[
+      'Nomor agenda otomatis dan terurut',
+      'Tracking disposisi antar pejabat',
+      'Pengingat tenggat surat prioritas',
+    ]}
   />
 );
